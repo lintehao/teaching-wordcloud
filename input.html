@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文字雲 · 輸入</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    main {
+      background: white;
+      padding: 36px 28px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      max-width: 420px;
+      width: 100%;
+    }
+    h1 { color: #333; font-size: 28px; margin-bottom: 6px; }
+    .hint { color: #888; margin-bottom: 24px; font-size: 15px; }
+    input[type="text"] {
+      width: 100%;
+      padding: 16px;
+      font-size: 20px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input[type="text"]:focus { border-color: #667eea; }
+    button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s;
+      font-family: inherit;
+    }
+    button:hover:not(:disabled) { transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status.success { background: #e8f5e9; color: #2e7d32; }
+    .status.error { background: #ffebee; color: #c62828; }
+    .links { margin-top: 20px; text-align: center; }
+    .links a { color: #888; font-size: 13px; text-decoration: none; }
+    .links a:hover { color: #667eea; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>說一個詞</h1>
+    <p class="hint">寫下一個你想到的詞,所有人會一起看到</p>
+
+    <form id="word-form">
+      <input id="word-input" type="text" maxlength="20" required autocomplete="off" placeholder="輸入一個詞...">
+      <button type="submit" id="submit-btn">送出</button>
+    </form>
+
+    <div id="status" class="status"></div>
+
+    <div class="links">
+      <a href="display.html">→ 看文字雲</a>
+    </div>
+  </main>
+
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, addDoc, serverTimestamp }
+      from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const form = document.getElementById('word-form');
+    const input = document.getElementById('word-input');
+    const btn = document.getElementById('submit-btn');
+    const status = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const word = input.value.trim();
+      if (!word) return;
+
+      btn.disabled = true;
+      btn.textContent = '送出中...';
+      status.className = 'status';
+      status.textContent = '';
+
+      try {
+        await addDoc(collection(db, 'wordcloud_words'), {
+          word,
+          created_at: serverTimestamp()
+        });
+        input.value = '';
+        status.className = 'status success';
+        status.textContent = `已送出:${word}`;
+      } catch (err) {
+        status.className = 'status error';
+        status.textContent = `送出失敗:${err.message}`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '送出';
+        input.focus();
+      }
+    });
+
+    input.focus();
+  </script>
+</body>
+</html>

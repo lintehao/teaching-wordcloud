@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>即時文字雲</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    main {
+      background: white;
+      padding: 48px 36px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 { color: #333; font-size: 32px; margin-bottom: 8px; }
+    .subtitle { color: #888; margin-bottom: 32px; }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 18px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: 600;
+      transition: transform 0.15s, box-shadow 0.15s;
+      border: 2px solid transparent;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    .btn.student { background: #f0f4ff; color: #4a5fd8; border-color: #d6deff; }
+    .btn.teacher { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    .desc { font-size: 14px; color: #aaa; margin-top: 6px; font-weight: 400; }
+    footer { margin-top: 24px; font-size: 12px; color: #bbb; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>即時文字雲</h1>
+    <p class="subtitle">Firebase 驅動,即時同步</p>
+
+    <a href="input.html" class="btn student">
+      學生輸入頁
+      <div class="desc">手機 / 平板開啟</div>
+    </a>
+    <a href="display.html" class="btn teacher">
+      老師顯示頁
+      <div class="desc">電腦投影使用</div>
+    </a>
+
+    <footer>由 Firebase Firestore + Claude Code 打造</footer>
+  </main>
+</body>
+</html>

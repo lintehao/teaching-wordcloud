@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文字雲 · 即時顯示</title>
+  <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; overflow: hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 12px 24px;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+    .title { font-size: 18px; font-weight: 600; color: #333; }
+    .stats {
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+    .stat strong { color: #667eea; font-size: 18px; margin-right: 4px; }
+    .links { display: flex; gap: 12px; }
+    .links a {
+      color: #888;
+      font-size: 13px;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .links a:hover { background: #f0f0f0; color: #667eea; }
+    #cloud-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #cloud {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #empty {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #ccc;
+      font-size: 28px;
+      text-align: center;
+    }
+    #empty .sub { font-size: 16px; margin-top: 12px; color: #ddd; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">即時文字雲</div>
+    <div class="stats">
+      <div class="stat"><strong id="total">0</strong>則訊息</div>
+      <div class="stat"><strong id="unique">0</strong>個不同</div>
+    </div>
+    <div class="links">
+      <a href="input.html">輸入頁</a>
+      <a href="index.html">首頁</a>
+    </div>
+  </header>
+
+  <div id="cloud-wrap">
+    <canvas id="cloud"></canvas>
+    <div id="empty">
+      還沒有人輸入...
+      <div class="sub">請學生開啟 input.html 開始輸入</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, onSnapshot }
+      from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+    const canvas = document.getElementById('cloud');
+    const wrap = document.getElementById('cloud-wrap');
+    const empty = document.getElementById('empty');
+    const totalEl = document.getElementById('total');
+    const uniqueEl = document.getElementById('unique');
+
+    let latestCounts = {};
+
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = wrap.clientWidth * dpr;
+      canvas.height = wrap.clientHeight * dpr;
+      canvas.style.width = wrap.clientWidth + 'px';
+      canvas.style.height = wrap.clientHeight + 'px';
+    }
+
+    function renderCloud() {
+      const list = Object.entries(latestCounts);
+      uniqueEl.textContent = list.length;
+
+      if (list.length === 0) {
+        empty.style.display = 'block';
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
+      empty.style.display = 'none';
+
+      const maxCount = Math.max(...list.map(([, c]) => c));
+      const minSize = Math.min(wrap.clientWidth, wrap.clientHeight) * 0.04;
+      const maxSize = Math.min(wrap.clientWidth, wrap.clientHeight) * 0.18;
+
+      const scaled = list.map(([w, c]) => [
+        w,
+        minSize + (c / maxCount) * (maxSize - minSize)
+      ]);
+
+      WordCloud(canvas, {
+        list: scaled,
+        gridSize: Math.round(8 * (window.devicePixelRatio || 1)),
+        weightFactor: 1,
+        fontFamily: '"PingFang TC", "Microsoft JhengHei", sans-serif',
+        color: () => {
+          const palette = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#ff9a9e'];
+          return palette[Math.floor(Math.random() * palette.length)];
+        },
+        backgroundColor: '#fafafa',
+        rotateRatio: 0.25,
+        rotationSteps: 2,
+        minRotation: -Math.PI / 8,
+        maxRotation: Math.PI / 8,
+        shuffle: true,
+        drawOutOfBound: false
+      });
+    }
+
+    resizeCanvas();
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeCanvas();
+        renderCloud();
+      }, 200);
+    });
+
+    const wordsRef = collection(db, 'wordcloud_words');
+    onSnapshot(wordsRef, (snapshot) => {
+      totalEl.textContent = snapshot.size;
+      const counts = {};
+      snapshot.forEach((doc) => {
+        const w = doc.data().word;
+        if (!w) return;
+        counts[w] = (counts[w] || 0) + 1;
+      });
+      latestCounts = counts;
+      renderCloud();
+    }, (err) => {
+      empty.innerHTML = `連線錯誤<div class="sub">${err.message}</div>`;
+      empty.style.display = 'block';
+    });
+  </script>
+</body>
+</html>
