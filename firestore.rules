@@ -2,10 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // 你的第一個集合：任何人可讀寫
-    // 之後新增工具時在這裡加更多 match 區塊
+    // wordcloud_words 集合：開放 1 小時後自動下線
+    // 截止時間：2026-05-17 08:33 UTC（台北時間 16:33）
     match /wordcloud_words/{document} {
-      allow read, write: if true;
+      allow read, write: if request.time < timestamp.date(2026, 5, 17) + duration.value(8, 'h') + duration.value(33, 'm');
     }
 
     // 其他集合預設禁止存取
